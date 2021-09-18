@@ -4,7 +4,7 @@
 # In[1]:
 
 
-#get_ipython().run_line_magic('matplotlib', 'inline')
+# get_ipython().run_line_magic('matplotlib', 'inline')
 
 # imports
 import matplotlib
@@ -21,7 +21,6 @@ matplotlib.use('TkAgg')
 # In[2]:
 
 
-
 # basic config and variables
 _VERSION = 'v1.0-mini'
 _DATAROOT = './data'
@@ -34,7 +33,7 @@ nusc = NuScenes(version=_VERSION, dataroot=_DATAROOT, verbose=True)
 
 def get_pcd_data(nusc_filepath: str):
     radar_point_cloud = RadarPointCloud.from_file(nusc_filepath)
-    points =  radar_point_cloud.points
+    points = radar_point_cloud.points
     x = points[0]
     y = points[1]
     vx_comp = points[8]
@@ -49,6 +48,7 @@ def get_pcd_data(nusc_filepath: str):
         'v_comp': (vx_comp ** 2 + vy_comp ** 2) ** 0.5,
         'radar_point_cloud': radar_point_cloud
     }
+
 
 def extract_channel_from_file(channel: str):
     filename = nusc.get('sample_data', channel)['filename']
@@ -75,13 +75,14 @@ def extract_samples_from_scene(scene: dict):
 def convert_binary_data_to_coordinates_and_velocity(sample: dict):
     data = sample['data']
     return {
-     'RADAR_FRONT' : extract_channel_from_file(data['RADAR_FRONT']),
-     'RADAR_FRONT_LEFT' : extract_channel_from_file(data['RADAR_FRONT_LEFT']),
-     'RADAR_FRONT_RIGHT' : extract_channel_from_file(data['RADAR_FRONT_RIGHT']),
-     'RADAR_BACK_LEFT' : extract_channel_from_file(data['RADAR_BACK_LEFT']),
-     'RADAR_BACK_RIGHT' : extract_channel_from_file(data['RADAR_BACK_RIGHT']),
-     'data': data
+        'RADAR_FRONT': extract_channel_from_file(data['RADAR_FRONT']),
+        'RADAR_FRONT_LEFT': extract_channel_from_file(data['RADAR_FRONT_LEFT']),
+        'RADAR_FRONT_RIGHT': extract_channel_from_file(data['RADAR_FRONT_RIGHT']),
+        'RADAR_BACK_LEFT': extract_channel_from_file(data['RADAR_BACK_LEFT']),
+        'RADAR_BACK_RIGHT': extract_channel_from_file(data['RADAR_BACK_RIGHT']),
+        'data': data
     }
+
 
 sc = nusc.scene[0]
 samples_from_scene = extract_samples_from_scene(sc)
@@ -103,7 +104,7 @@ def new_method():
     samples = scene_in_sample_data
     scene_points = list()
     for sample in samples:
-        x, y, z, vx_comp, vy_comp, pointclouds = list(), list(), list() ,list() ,list(), list()
+        x, y, z, vx_comp, vy_comp, pointclouds = list(), list(), list(), list(), list(), list()
         ego_pose_coords = []
         for channel in channels:
             pc = sample[channel]['radar_point_cloud']
@@ -111,7 +112,8 @@ def new_method():
             current_radar = nusc.get('sample_data', radar_token)
             ego_pose = nusc.get('ego_pose', current_radar['ego_pose_token'])
             calibrated_sensor = nusc.get('calibrated_sensor', current_radar['calibrated_sensor_token'])
-            sensor_to_car = transform_matrix(calibrated_sensor['translation'], Quaternion(calibrated_sensor['rotation'], inverse=False))
+            sensor_to_car = transform_matrix(calibrated_sensor['translation'],
+                                             Quaternion(calibrated_sensor['rotation'], inverse=False))
             car_to_world = transform_matrix(ego_pose['translation'], Quaternion(ego_pose['rotation'], inverse=False))
 
             sensor_to_world = car_to_world @ sensor_to_car
@@ -119,15 +121,15 @@ def new_method():
             pc.transform(sensor_to_world)
 
             pointclouds.append(pc)
-            
+
             ego_pose_coords = ego_pose['translation']
 
             # combine radar
-            
+
             for i in range(pc.points.shape[1]):
                 x.append(pc.points[0][i])
                 y.append(pc.points[1][i])
-                z.append(pc.points[2][i]) # redundant?
+                z.append(pc.points[2][i])  # redundant?
                 vx_comp.append(pc.points[7][i])
                 vy_comp.append(pc.points[8][i])
         scene_points.append([
@@ -140,11 +142,10 @@ def new_method():
             np.asarray(ego_pose_coords)
         ])
 
-    return np.asarray(scene_points)
+    return np.asarray(scene_points, dtype=object)
 
 
 result = new_method()
-
 
 plt.style.use('dark_background')
 
@@ -155,6 +156,7 @@ ego_y = list()
 
 rit = iter(result)
 
+
 def update(i):
     global rit
     try:
@@ -162,19 +164,18 @@ def update(i):
     except StopIteration:
         return
     x, y = row[0], row[1]
-    ego_x = row[6][0]
-    ego_y = row[6][1]
+    radar_ego_x = row[6][0]
+    radar_ego_y = row[6][1]
 
     plt.cla()
     plt.ylim(900, 1300)
     plt.xlim(300, 550)
     plt.scatter(x, y, s=0.1)
-    plt.scatter(ego_x, ego_y, s=2, color='red')
+    plt.scatter(radar_ego_x, radar_ego_y, s=2, color='red')
     plt.plot()
 
+
 ani = animation.FuncAnimation(plt.gcf(), update, frames=len(result), interval=100)
-
-
 # TODO: Ego pose in rot plotten
 # TODO: marker size
 # TODO: ausschnitt
