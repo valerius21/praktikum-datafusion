@@ -7,7 +7,7 @@
 #get_ipython().run_line_magic('matplotlib', 'inline')
 
 # imports
-
+import matplotlib
 import matplotlib.pyplot as plt
 import matplotlib.animation as animation
 import numpy as np
@@ -16,6 +16,7 @@ from nuscenes.utils.data_classes import RadarPointCloud
 from nuscenes.utils.geometry_utils import transform_matrix
 from pyquaternion import Quaternion
 
+matplotlib.use('TkAgg')
 
 # In[2]:
 
@@ -23,7 +24,7 @@ from pyquaternion import Quaternion
 
 # basic config and variables
 _VERSION = 'v1.0-mini'
-_DATAROOT = '/Users/valerius/projects/data_fusion/praktikum-datafusion/data'
+_DATAROOT = './data'
 
 nusc = NuScenes(version=_VERSION, dataroot=_DATAROOT, verbose=True)
 
